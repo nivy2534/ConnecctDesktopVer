@@ -353,17 +353,14 @@ public class ConnecctDesktopUI extends Application {
         String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
         String finalMsg = "[" + timestamp + "] " + message + "\n";
 
-        // Selalu print ke console (ini bebas thread)
         System.out.println(finalMsg);
 
         if (logTextArea == null)
             return;
 
         if (Platform.isFxApplicationThread()) {
-            // Kalau lagi di JavaFX thread, boleh langsung
             logTextArea.appendText(finalMsg);
         } else {
-            // Kalau dari thread background, lempar ke JavaFX thread
             Platform.runLater(() -> logTextArea.appendText(finalMsg));
         }
     }
