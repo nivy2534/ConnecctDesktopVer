@@ -35,6 +35,19 @@ public class InformationExtract {
         return ips;
     }
 
+    private String getLocalIp() {
+    List<String> ips = getAvailableIp();
+    if (!ips.isEmpty()) {
+        // Return IP pertama yang bukan loopback
+        for (String ip : ips) {
+            if (!ip.startsWith("127")) {
+                return ip;
+            }
+        }
+    }
+    return "localhost";
+    }
+
     private String getUsername() {
         return System.getProperty("user.name");
     }

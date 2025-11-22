@@ -1,7 +1,0 @@
-com\connecctdesktop\Api\InformationExtract.class
-com\connecctdesktop\Api\UDPDiscovery$DiscoveryResult.class
-com\connecctdesktop\Api\writePubkey.class
-com\connecctdesktop\Api\QRGenerator.class
-com\connecctdesktop\Api\UDPDiscovery.class
-com\connecctdesktop\App.class
-com\connecctdesktop\Api\KeyFetcher.class
