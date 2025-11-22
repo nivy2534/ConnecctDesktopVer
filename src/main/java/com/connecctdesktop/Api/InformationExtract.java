@@ -4,11 +4,11 @@ import java.util.*;
 import java.net.*;
 
 public class InformationExtract {
-    InformationExtract() {
+    public InformationExtract() {
 
     }
 
-    private List<String> getAvailableIp() {
+    public List<String> getAvailableIp() {
         List<String> ips = new ArrayList<>();
 
         try {
@@ -25,7 +25,15 @@ public class InformationExtract {
 
                 while (address.hasMoreElements()) {
                     InetAddress adr = address.nextElement();
-                    ips.add(adr.getHostAddress());
+
+                    // ✔ Hanya IPv4
+                    if (adr instanceof Inet4Address) {
+
+                        // ✔ Skip loopback (127.x.x.x)
+                        if (!adr.isLoopbackAddress()) {
+                            ips.add(adr.getHostAddress());
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -35,20 +43,20 @@ public class InformationExtract {
         return ips;
     }
 
-    private String getLocalIp() {
-    List<String> ips = getAvailableIp();
-    if (!ips.isEmpty()) {
-        // Return IP pertama yang bukan loopback
-        for (String ip : ips) {
-            if (!ip.startsWith("127")) {
-                return ip;
+    public String getLocalIp() {
+        List<String> ips = getAvailableIp();
+        if (!ips.isEmpty()) {
+            // Return IP pertama yang bukan loopback
+            for (String ip : ips) {
+                if (!ip.startsWith("127")) {
+                    return ip;
+                }
             }
         }
-    }
-    return "localhost";
+        return "localhost";
     }
 
-    private String getUsername() {
+    public String getUsername() {
         return System.getProperty("user.name");
     }
 }

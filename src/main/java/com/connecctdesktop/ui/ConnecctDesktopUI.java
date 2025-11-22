@@ -16,13 +16,13 @@ import java.io.ByteArrayInputStream;
 
 public class ConnecctDesktopUI extends Application {
 
-    private Label ipAddressLabel;
     private Label usernameLabel;
     private TextField portField;
     private TextArea logTextArea;
     private ImageView qrImageView;
     private Label statusLabel;
     private Button generateQRButton;
+    private ComboBox<String> ipComboBox;
 
     @Override
     public void start(Stage primaryStage) {
@@ -98,12 +98,18 @@ public class ConnecctDesktopUI extends Application {
         sysInfoTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 10px; -fx-text-fill: #a7a9a9;");
 
         // IP Address (as hostname)
+        // IP Address (as hostname)
         HBox ipBox = new HBox(8);
         Label ipLabel = new Label("Hostname (IP):");
         ipLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #a7a9a9; -fx-min-width: 100px;");
-        ipAddressLabel = new Label("-");
-        ipAddressLabel.setStyle("-fx-text-fill: #32a8c2; -fx-font-weight: bold; -fx-font-size: 12px;");
-        ipBox.getChildren().addAll(ipLabel, ipAddressLabel);
+
+        // ComboBox untuk pilih IP
+        ipComboBox = new ComboBox<>();
+        ipComboBox.setPrefWidth(200);
+        ipComboBox.setPromptText("Select IP...");
+        ipComboBox.setStyle("-fx-font-size: 12px;");
+
+        ipBox.getChildren().addAll(ipLabel, ipComboBox);
 
         // Username
         HBox userBox = new HBox(8);
@@ -209,26 +215,36 @@ public class ConnecctDesktopUI extends Application {
     private void loadSystemInformation() {
         logMessage("📱 Loading system information...");
 
+        InformationExtract info = new InformationExtract();
+
         // Get username
-        String username = System.getProperty("user.name");
+        String username = info.getUsername();
+        if (username == null || username.isEmpty()) {
+            username = "-";
+        }
         usernameLabel.setText(username);
         logMessage("✅ Username: " + username);
 
-        // Get local IP (as hostname)
-        String localIp = getAvailableLocalIp();
-        ipAddressLabel.setText(localIp);
-        logMessage("✅ Local IP (Hostname): " + localIp);
+        // Get list IP
+        java.util.List<String> ips = info.getAvailableIp();
+        if (ips == null || ips.isEmpty()) {
+            logMessage("⚠️ No available IPs found, fallback to 127.0.0.1");
+            ipComboBox.getItems().setAll("127.0.0.1");
+        } else {
+            ipComboBox.getItems().setAll(ips);
+        }
+        ipComboBox.getSelectionModel().selectFirst();
 
         logMessage("System information ready!");
     }
 
     private void generateAndDisplayQR() {
-        String ipAddress = ipAddressLabel.getText();
+        String ipAddress = ipComboBox.getSelectionModel().getSelectedItem();
         String username = usernameLabel.getText();
         String portStr = portField.getText().trim();
 
-        if (ipAddress.equals("-") || username.equals("-") || portStr.isEmpty()) {
-            logMessage("❌ Error: Missing information!");
+        if (ipAddress == null || ipAddress.isEmpty() || username.equals("-") || portStr.isEmpty()) {
+            logMessage("❌ Error: Missing information (IP/username/port)!");
             statusLabel.setText("Missing information");
             statusLabel.setStyle("-fx-text-fill: #ff5459;");
             return;
