@@ -35,17 +35,55 @@ public class InformationExtract {
         return ips;
     }
 
-    private String getLocalIp() {
-    List<String> ips = getAvailableIp();
-    if (!ips.isEmpty()) {
-        // Return IP pertama yang bukan loopback
-        for (String ip : ips) {
-            if (!ip.startsWith("127")) {
-                return ip;
+    private String getAvailableLocalIp() {
+    try {
+        java.util.Enumeration<java.net.NetworkInterface> interfaces = 
+            java.net.NetworkInterface.getNetworkInterfaces();
+        
+        java.util.List<String> wifiIps = new java.util.ArrayList<>();
+        java.util.List<String> vpnIps = new java.util.ArrayList<>();
+        java.util.List<String> otherIps = new java.util.ArrayList<>();
+        
+        while (interfaces.hasMoreElements()) {
+            java.net.NetworkInterface iface = interfaces.nextElement();
+            if (!iface.isUp() || iface.isLoopback()) continue;
+            
+            String ifaceName = iface.getName().toLowerCase();
+            
+            java.util.Enumeration<java.net.InetAddress> addresses = iface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                java.net.InetAddress addr = addresses.nextElement();
+                if (!(addr instanceof java.net.Inet4Address)) continue;
+                
+                String ipAddr = addr.getHostAddress();
+                
+                if (ifaceName.contains("wlan") || ifaceName.contains("eth") || 
+                    ifaceName.contains("en") || ifaceName.contains("wifi") ||
+                    ifaceName.contains("ethernet")) {
+                    wifiIps.add(ipAddr);
+                }
+                else if (ifaceName.contains("tun") || ifaceName.contains("ppp") || 
+                         ifaceName.contains("tap") || ifaceName.contains("vpn") ||
+                         ifaceName.contains("openVPN") || ifaceName.contains("wireguard")) {
+                    vpnIps.add(ipAddr);
+                }
+                else {
+                    otherIps.add(ipAddr);
+                }
             }
         }
+        
+        if (!wifiIps.isEmpty()) {
+            return wifiIps.get(0);
+        } else if (!vpnIps.isEmpty()) {
+            return vpnIps.get(0);
+        } else if (!otherIps.isEmpty()) {
+            return otherIps.get(0);
+        }
+        
+    } catch (Exception e) {
     }
-    return "localhost";
+    return "127.0.0.1";
     }
 
     private String getUsername() {

@@ -13,6 +13,12 @@ import javafx.stage.Stage;
 import com.connecctdesktop.Api.*;
 import com.google.gson.JsonObject;
 import java.io.ByteArrayInputStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 public class ConnecctDesktopUI extends Application {
 
@@ -325,24 +331,56 @@ public class ConnecctDesktopUI extends Application {
         return baos.toByteArray();
     }
 
-    private String getAvailableLocalIp() {
-        try {
-            java.util.Enumeration<java.net.NetworkInterface> interfaces = 
-                java.net.NetworkInterface.getNetworkInterfaces();
+ private String getAvailableLocalIp() {
+        try {            
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            
+            List<String> wifiIps = new ArrayList<>();
+            List<String> vpnIps = new ArrayList<>();
+            List<String> otherIps = new ArrayList<>();
+            
             while (interfaces.hasMoreElements()) {
-                java.net.NetworkInterface iface = interfaces.nextElement();
+                NetworkInterface iface = interfaces.nextElement();
                 if (!iface.isUp() || iface.isLoopback()) continue;
                 
-                java.util.Enumeration<java.net.InetAddress> addresses = iface.getInetAddresses();
+                String ifaceName = iface.getName().toLowerCase();
+                
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
-                    java.net.InetAddress addr = addresses.nextElement();
-                    if (addr instanceof java.net.Inet4Address) {
-                        return addr.getHostAddress();
+                    InetAddress addr = addresses.nextElement();
+                    if (!(addr instanceof Inet4Address)) continue;
+                    
+                    String ipAddr = addr.getHostAddress();
+                    
+                    if (ifaceName.contains("wlan") || ifaceName.contains("wifi")) {
+                        wifiIps.add(ipAddr);                    }
+                    else if ((ifaceName.contains("enp") || ifaceName.contains("ens") || 
+                              (ifaceName.startsWith("en") && !ifaceName.contains("eth"))) &&
+                             !ifaceName.matches(".*eth\\d.*")) {
+                        wifiIps.add(ipAddr);
+                    }
+                    else if (ifaceName.contains("tun") || ifaceName.contains("ppp") || 
+                             ifaceName.contains("tap") || ifaceName.contains("vpn") ||
+                             ifaceName.contains("openvpn") || ifaceName.contains("wireguard") ||
+                             ifaceName.matches(".*eth\\d.*")) {
+                        vpnIps.add(ipAddr);
+                    }
+                    else {
+                        otherIps.add(ipAddr);
                     }
                 }
             }
+            
+            if (!wifiIps.isEmpty()) {
+                return wifiIps.get(0);
+            } else if (!vpnIps.isEmpty()) {
+                return vpnIps.get(0);
+            } else if (!otherIps.isEmpty()) {
+                return otherIps.get(0);
+            }
+            
         } catch (Exception e) {
-            logMessage("⚠️ Error getting local IP: " + e.getMessage());
+            e.printStackTrace();
         }
         return "127.0.0.1";
     }
