@@ -23,6 +23,7 @@ public class ConnecctDesktopUI extends Application {
     private Label statusLabel;
     private Button generateQRButton;
     private ComboBox<String> ipComboBox;
+    private String currentSession;
 
     @Override
     public void start(Stage primaryStage) {
@@ -242,6 +243,7 @@ public class ConnecctDesktopUI extends Application {
         String ipAddress = ipComboBox.getSelectionModel().getSelectedItem();
         String username = usernameLabel.getText();
         String portStr = portField.getText().trim();
+        prepareCurrentSessionKey();
 
         if (ipAddress == null || ipAddress.isEmpty() || username.equals("-") || portStr.isEmpty()) {
             logMessage("❌ Error: Missing information (IP/username/port)!");
@@ -262,6 +264,8 @@ public class ConnecctDesktopUI extends Application {
             return;
         }
 
+        udpStartListening();
+
         generateQRButton.setDisable(true);
         logMessage("🔄 Generating QR code...");
         statusLabel.setText("Processing...");
@@ -277,6 +281,7 @@ public class ConnecctDesktopUI extends Application {
                 connectionData.addProperty("username", username);
                 connectionData.addProperty("port", port);
                 connectionData.addProperty("timestamp", System.currentTimeMillis());
+                connectionData.addProperty("session", currentSession);
 
                 String jsonData = connectionData.toString();
                 logMessage("📦 Connection data JSON: " + jsonData);
@@ -379,6 +384,25 @@ public class ConnecctDesktopUI extends Application {
         } else {
             Platform.runLater(() -> logTextArea.appendText(finalMsg));
         }
+    }
+
+    private void udpStartListening() {
+        Thread t = new Thread(() -> {
+            UDPDiscovery.DiscoveryResult result = UDPDiscovery.waitForPhoneOnce(currentSession);
+            if (result != null) {
+                logMessage("HP terdeteksi: IP = " + result.ip + ", HTTP port = " + result.httpPort);
+            } else {
+                logMessage("Discovery gagal!");
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+        logMessage("UDP server listen on port 33220");
+    }
+
+    private void prepareCurrentSessionKey() {
+        this.currentSession = GenerateExcahange.generateSessionSecret();
+        logMessage("New Session secret generated");
     }
 
     public static void main(String[] args) {
