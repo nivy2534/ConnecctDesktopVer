@@ -24,6 +24,8 @@ public class ConnecctDesktopUI extends Application {
     private Button generateQRButton;
     private ComboBox<String> ipComboBox;
     private String currentSession;
+    private static final int HTTP_PORT = 80;
+    private httpReceiver httpServer;
 
     @Override
     public void start(Stage primaryStage) {
@@ -264,6 +266,21 @@ public class ConnecctDesktopUI extends Application {
             return;
         }
 
+        try {
+            if (httpServer != null) {
+                httpServer.stopServer();
+            }
+            httpServer = new httpReceiver(HTTP_PORT, currentSession);
+            httpServer.startServer();
+            logMessage("HTTP receiver running on port " + HTTP_PORT);
+        } catch (Exception e) {
+            logMessage("❌ Failed to start HTTP server: " + e.getMessage());
+            e.printStackTrace();
+            statusLabel.setText("HTTP server error");
+            statusLabel.setStyle("-fx-text-fill: #ff5459;");
+            return;
+        }
+
         udpStartListening();
 
         generateQRButton.setDisable(true);
@@ -273,13 +290,14 @@ public class ConnecctDesktopUI extends Application {
 
         new Thread(() -> {
             try {
-                int port = Integer.parseInt(portStr);
+                int sshPort = Integer.parseInt(portStr);
 
                 // Create JSON data for QR code
                 JsonObject connectionData = new JsonObject();
                 connectionData.addProperty("hostname", ipAddress);
                 connectionData.addProperty("username", username);
-                connectionData.addProperty("port", port);
+                connectionData.addProperty("port", sshPort);
+                connectionData.addProperty("httpPort", HTTP_PORT);
                 connectionData.addProperty("timestamp", System.currentTimeMillis());
                 connectionData.addProperty("session", currentSession);
 

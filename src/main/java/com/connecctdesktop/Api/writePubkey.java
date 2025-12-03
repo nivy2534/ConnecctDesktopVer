@@ -6,7 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class writePubkey {
+public class WritePubkey {
+    public WritePubkey() {
+
+    }
+
     public static void installkey(String pubkey) throws IOException {
         Path home = Path.of(System.getProperty("user.home"));
         Path sshDir = home.resolve(".ssh");

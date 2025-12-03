@@ -5,11 +5,10 @@ import java.net.DatagramSocket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-import com.connecctdesktop.Api.UDPDiscovery.DiscoveryResult;
-
 public class UDPDiscovery {
     private static final int DISCOVERY_PORT = 33220;
     private static final String prefix = "CONNECCT_DISCOVERY:";
+    public static volatile String lastHttpToken;
 
     public static DiscoveryResult waitForPhoneOnce(String localSecret) {
         try (DatagramSocket socket = new DatagramSocket(DISCOVERY_PORT)) {
@@ -40,7 +39,10 @@ public class UDPDiscovery {
                 return null;
             }
 
-            byte[] reply = "OK".getBytes(StandardCharsets.UTF_8);
+            String newSecret = GenerateExcahange.generateSessionSecret();
+            lastHttpToken = newSecret;
+            String replyMessage = "OK:" + newSecret;
+            byte reply[] = replyMessage.getBytes(StandardCharsets.UTF_8);
             DatagramPacket resp = new DatagramPacket(
                     reply,
                     reply.length,
@@ -50,7 +52,7 @@ public class UDPDiscovery {
             System.out.println("✅ Balasan OK dikirim ke " + ip + ":" + packet.getPort());
 
             // Kalau kamu pengen simpan sesuatu:
-            return new DiscoveryResult(ip, /* httpPort */ 80);
+            return new DiscoveryResult(ip, /* httpPort */ 33221);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -68,8 +70,10 @@ public class UDPDiscovery {
     }
 
     public static Boolean checkSecret(String secret, String localSecret) {
-        if (secret == null || localSecret == null)
+        if (secret == null || localSecret == null) {
+            System.out.println();
             return false;
+        }
         return MessageDigest.isEqual(secret.getBytes(StandardCharsets.UTF_8),
                 localSecret.getBytes(StandardCharsets.UTF_8));
     }
